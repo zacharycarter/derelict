@@ -1,7 +1,13 @@
 # derelict
 
 A science-fiction roguelike game, currently in active development.
-
+## Screenshots
+![Current Engine State](http://i.imgur.com/cYUZXEe.png)
+## TODO
+* Mesh object
+* Sprite batching upgrades
+* Alpha Blending
+* Scene graph
 ## Installation
 ## Usage
 ## Support
