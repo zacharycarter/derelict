@@ -8,6 +8,7 @@ A science-fiction roguelike game, currently in active development.
 * Sprite batching upgrades
 * Alpha Blending
 * Scene graph
+
 ## Installation
 ## Usage
 ## Support
