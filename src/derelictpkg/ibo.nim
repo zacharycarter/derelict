@@ -36,3 +36,6 @@ proc `bind`*(ibo: var IBO) =
 proc clear*(ibo: var IBO) =
   ibo.indexBuffer.setLen(0)
   ibo.dirty = true
+
+proc setIndices*(ibo: var IBO, indices: seq[GLushort]) =
+  ibo.indexBuffer = indices
