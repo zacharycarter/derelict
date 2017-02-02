@@ -7,8 +7,6 @@ type
     vao: GLuint
     vbo: VBO
     ibo: IBO
-    vertices: seq[GLfloat]
-    indices: seq[GLushort]
     maxSprites: int
     lastTexture: Texture
     projectionMatrix: Mat4x4[GLfloat]
@@ -16,9 +14,6 @@ type
     combinedMatrix: Mat4x4[GLfloat]
     shader: ShaderProgram
     color: float
-    quadVAO: GLuint
-    vbo2: GLuint
-    elementArrayBuffer: GLuint
 
 proc createDefaultShader() : ShaderProgram =
   let vertexShaderSource = """
