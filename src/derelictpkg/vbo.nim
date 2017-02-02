@@ -33,6 +33,3 @@ proc `bind`*(vbo: var VBO) =
 proc clear*(vbo: var VBO) =
   vbo.vertexBuffer.setLen(0)
   vbo.dirty = true
-
-proc setVertices*(vbo: var VBO, vertices: seq[GLfloat]) =
-  vbo.vertexBuffer = vertices

@@ -39,3 +39,4 @@ proc clear*(ibo: var IBO) =
 
 proc setIndices*(ibo: var IBO, indices: seq[GLushort]) =
   ibo.indexBuffer = indices
+  ibo.dirty = true

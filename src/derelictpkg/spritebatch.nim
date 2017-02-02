@@ -4,9 +4,6 @@ import color, graphics, ibo, log, mesh, shader, texture, vbo, vertexattribute
 
 type
   SpriteBatch* = ref object of RootObj
-    vao: GLuint
-    vbo: VBO
-    ibo: IBO
     mesh: Mesh
     vertices: seq[GLfloat]
     maxSprites: int
@@ -60,22 +57,9 @@ proc flush(spriteBatch: SpriteBatch) =
   spriteBatch.shader.setUniformMatrix("model", m)
 
   spriteBatch.lastTexture.`bind`()
-  
-  glBindVertexArray(spriteBatch.vao)
 
-  spriteBatch.vbo.`bind`()
-  spriteBatch.ibo.`bind`()
-
-  glVertexAttribPointer(0, 4, cGL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nil)
-  glEnableVertexAttribArray(0)
-  
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spriteBatch.ibo.handle())
-  glDrawElements(GL_TRIANGLES, GLsizei spriteBatch.ibo.size(),GL_UNSIGNED_SHORT,nil)
-
-  glDisableVertexAttribArray(0)
-  glBindVertexArray(0)
-
-  spriteBatch.vbo.clear()
+  spriteBatch.mesh.`bind`()
+  spriteBatch.mesh.render()
 
 proc switchTexture(spriteBatch: SpriteBatch, texture: Texture) =
   flush(spriteBatch)
@@ -84,27 +68,39 @@ proc switchTexture(spriteBatch: SpriteBatch, texture: Texture) =
 proc draw*(spriteBatch: var SpriteBatch, texture: Texture, x: float, y: float, width: float, height: float) =
   if texture != spriteBatch.lastTexture:
     switchTexture(spriteBatch, texture)
+
+  var vertices = spriteBatch.vertices
   
-  let vertices : seq[GLfloat] = @[
-    GLfloat x, GLfloat y, GLfloat 0.0, GLfloat 0.0,
-    GLfloat x, GLfloat y + height, GLfloat 0.0, GLfloat 1.0,
-    GLfloat x + width, GLfloat y + height, GLfloat 1.0, GLfloat 1.0,
-    GLfloat x + width, GLfloat y, GLfloat 1.0, GLfloat 0.0
-  ]
+  vertices.add(x)
+  vertices.add(y)
+  vertices.add(0.0)
+  vertices.add(0.0)
 
-  spriteBatch.vbo.add(vertices)
+  vertices.add(x)
+  vertices.add(y + height)
+  vertices.add(0.0)
+  vertices.add(1.0)
 
-  if int(spriteBatch.ibo.size() / 6) >= spriteBatch.maxSprites:
+  vertices.add(x + width)
+  vertices.add(y + height)
+  vertices.add(1.0)
+  vertices.add(1.0)
+
+  vertices.add(x + width)
+  vertices.add(y)
+  vertices.add(1.0)
+  vertices.add(0.0)
+
+  spriteBatch.mesh.addVertices(vertices)
+
+  if int(spriteBatch.mesh.indexCount() / 6) >= spriteBatch.maxSprites:
     flush(spriteBatch)
 
 proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatch =
   result = SpriteBatch()
   result.maxSprites = maxSprites
   result.vertices = @[]
-  glGenVertexArrays(1, addr result.vao)
-  result.vbo = newVBO(true)
-  result.ibo = newIBO(true)
-  #result.mesh = newMesh(true)
+  result. mesh = newMesh(true)
 
   var i = 0
   var j : GLushort = 0
@@ -119,7 +115,7 @@ proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatc
     inc(j, 4)
     inc(i, 6)
 
-  result.ibo.add(indices)
+  result.mesh.setIndices(indices)
 
   if defaultShader.isNil:
     result.shader = createDefaultShader()
@@ -136,13 +132,11 @@ proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatc
 
   result.shader.`end`()
 
-
 proc begin*(spriteBatch: SpriteBatch) =
   spriteBatch.shader.begin()
 
-
 proc `end`*(spriteBatch: SpriteBatch) =
-  if spriteBatch.ibo.size() > 0:
+  if spriteBatch.mesh.indexCount() > 0:
     flush(spriteBatch)
   
   spriteBatch.lastTexture = nil
