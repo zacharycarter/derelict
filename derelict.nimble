@@ -13,4 +13,4 @@ bin           = @["derelict"]
 requires "nim >= 0.16.1"
 requires "sdl2 >= 1.1"
 requires "opengl >= 1.1.0"
-requires "glm >= 0.1.1"
+requires "https://github.com/krux02/nim-glm.git"
