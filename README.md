@@ -4,8 +4,8 @@ A science-fiction roguelike game, currently in active development.
 ## Screenshots
 ![Current Engine State](http://i.imgur.com/cYUZXEe.png)
 ## TODO
-* Mesh object
-* Sprite batching upgrades
+* ~~Mesh object~~
+* Sprite batching upgrades - generic way of handling vertex attributes
 * Alpha Blending
 * Scene graph
 
