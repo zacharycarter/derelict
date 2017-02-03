@@ -1,6 +1,6 @@
 import sdl2
 
-import color, asset, framerate, game, graphics, log, shader, spritebatch, texture
+import asset, framerate, game, graphics, log, shader, spritebatch, texture
 
 type
   DEngine = ref TDEngine

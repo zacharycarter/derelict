@@ -1,6 +1,6 @@
 import glm, opengl
 
-import color, graphics, ibo, log, mesh, shader, texture, vbo, vertex, vertexattribute
+import graphics, ibo, log, mesh, shader, texture, vbo, vertex, vertexattribute
 
 type
   SpriteBatch* = ref object of RootObj
@@ -12,7 +12,6 @@ type
     transformMatrix : Mat4x4[GLfloat]
     combinedMatrix: Mat4x4[GLfloat]
     shader: ShaderProgram
-    color: float
 
 proc createDefaultShader() : ShaderProgram =
   let vertexShaderSource = """
