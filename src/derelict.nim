@@ -17,6 +17,10 @@ proc update(derelict: Derelict, deltaTime: float) =
 
 proc render(derelict: Derelict) =
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
   let texture = Texture get("assets/textures/test.png")
   let texture2 = Texture get("assets/textures/bunny.png")
   derelict.batch.begin()
