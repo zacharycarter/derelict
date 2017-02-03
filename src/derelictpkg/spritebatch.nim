@@ -1,11 +1,11 @@
 import glm, opengl
 
-import color, graphics, ibo, log, mesh, shader, texture, vbo, vertexattribute
+import color, graphics, ibo, log, mesh, shader, texture, vbo, vertex, vertexattribute
 
 type
   SpriteBatch* = ref object of RootObj
     mesh: Mesh
-    vertices: seq[GLfloat]
+    vertices: seq[Vertex]
     maxSprites: int
     lastTexture: Texture
     projectionMatrix: Mat4x4[GLfloat]
@@ -17,22 +17,27 @@ type
 proc createDefaultShader() : ShaderProgram =
   let vertexShaderSource = """
     #version 330 core
-    layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
+    layout (location = 0) in vec3 position;
+    layout (location = 1) in vec2 texCoords;
+    layout (location = 2) in vec4 color;
 
     out vec2 TexCoords;
+    out vec4 Color;
 
     uniform mat4 model;
     uniform mat4 projection;
 
     void main()
     {
-        TexCoords = vertex.zw;
-        gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0);
+        Color = color;
+        TexCoords = texCoords;
+        gl_Position = projection * model * vec4(position, 1.0);
     }
   """
   let fragmentShaderSource = """
     #version 330 core
     in vec2 TexCoords;
+    in vec4 Color;
     out vec4 color;
 
     uniform sampler2D image;
@@ -40,7 +45,7 @@ proc createDefaultShader() : ShaderProgram =
 
     void main()
     {    
-        color =  texture(image, TexCoords);
+        color =  Color * texture(image, TexCoords);
     }  
   """
 
@@ -71,25 +76,29 @@ proc draw*(spriteBatch: var SpriteBatch, texture: Texture, x: float, y: float, w
 
   var vertices = spriteBatch.vertices
   
-  vertices.add(x)
-  vertices.add(y)
-  vertices.add(0.0)
-  vertices.add(0.0)
+  vertices.add(newVertex(
+    vec3f(x, y, 0.0)
+    , vec2f(0.0, 0.0)
+    , vec4f(1.0, 0.0, 0.0, 1.0)
+  ))
 
-  vertices.add(x)
-  vertices.add(y + height)
-  vertices.add(0.0)
-  vertices.add(1.0)
+  vertices.add(newVertex(
+    vec3f(x, y + height, 0.0)
+    , vec2f(0.0, 1.0)
+    , vec4f(1.0, 0.0, 0.0, 1.0)
+  ))
 
-  vertices.add(x + width)
-  vertices.add(y + height)
-  vertices.add(1.0)
-  vertices.add(1.0)
+  vertices.add(newVertex(
+    vec3f(x + width, y + width, 0.0)
+    , vec2f(1.0, 1.0)
+    , vec4f(1.0, 0.0, 0.0, 1.0)
+  ))
 
-  vertices.add(x + width)
-  vertices.add(y)
-  vertices.add(1.0)
-  vertices.add(0.0)
+  vertices.add(newVertex(
+    vec3f(x + width, y, 0.0)
+    , vec2f(1.0, 0.0)
+    , vec4f(1.0, 0.0, 0.0, 1.0)
+  ))
 
   spriteBatch.mesh.addVertices(vertices)
 
@@ -126,7 +135,7 @@ proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatc
 
   result.shader.setUniformi("image", 0)
 
-  var p = ortho[GLfloat](0, 960, 540, 0, 0.0, 1.0)
+  var p = ortho[GLfloat](0, 960, 540, 0, -1.0, 1.0)
 
   result.shader.setUniformMatrix("projection", p)
 

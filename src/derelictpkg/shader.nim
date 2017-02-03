@@ -45,6 +45,7 @@ proc createShader(shaderProgram: var ShaderProgram, `type`: GLenum, source: stri
     var infoLog = ""
     glGetShaderInfoLog(shader, infoLogLength, nil, infoLog)
     shaderProgram.log.add(infoLog)
+    echo infolog
     return false
 
   if `type` == GL_VERTEX_SHADER:

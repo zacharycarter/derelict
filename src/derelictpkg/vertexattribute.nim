@@ -1,14 +1,11 @@
 import opengl
 
-const position*: int = 1
-const colorUnpacked*: int = 2
-const colorPacked*: int = 4
-const normal*: int  = 8
-const textureCoordinates*: int = 16
-
 type
+  Usage = enum
+    USAGE_NB = 0, POSITION = 1, COLOR_UNPACKED = 2, COLOR_PACKED = 4, NORMAL = 8, TEXTURE_COORDINATES = 16
+  
   VertexAttribute* = object
-    usage: int
+    usage: Usage
     numComponents*: int
     normalized*: bool
     `type`*: GLenum
@@ -20,8 +17,8 @@ type
     attributes: seq[VertexAttribute]
     vertexSize*: int
 
-proc newVertexAttribute*(usage: int, numComponents: int, `type`: GLenum, normalized: bool, alias: string, unit: int) : VertexAttribute =
-  result = VertexAttribute()
+proc newVertexAttribute*(usage: Usage, numComponents: int, `type`: GLenum, normalized: bool, alias: string, unit: int) : VertexAttribute =
+  result = VertexAttribute(usage:USAGE_NB)
   result.usage = usage
   result.numComponents = numComponents
   result.`type` = `type`
@@ -29,13 +26,13 @@ proc newVertexAttribute*(usage: int, numComponents: int, `type`: GLenum, normali
   result.alias = alias
   result.unit = unit
 
-proc newVertexAttribute*(usage: int, numComponents: int, alias: string, unit: int) : VertexAttribute =
-  if usage == colorPacked:
-    return newVertexAttribute(usage, numComponents, GL_UNSIGNED_BYTE, usage == colorPacked, alias, unit) 
+proc newVertexAttribute*(usage: Usage, numComponents: int, alias: string, unit: int) : VertexAttribute =
+  if usage == COLOR_PACKED:
+    return newVertexAttribute(usage, numComponents, GL_UNSIGNED_BYTE, usage == COLOR_PACKED, alias, unit) 
   else:
-    return newVertexAttribute(usage, numComponents, cGL_FLOAT, usage == colorPacked, alias, unit) 
+    return newVertexAttribute(usage, numComponents, cGL_FLOAT, usage == COLOR_PACKED, alias, unit) 
 
-proc newVertexAttribute*(usage: int, numComponents: int, alias: string) : VertexAttribute =
+proc newVertexAttribute*(usage: Usage, numComponents: int, alias: string) : VertexAttribute =
   newVertexAttribute(usage, numComponents, alias, 0)
 
 proc getSizeInBytes(vertexAttribute: VertexAttribute) : int =
