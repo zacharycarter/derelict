@@ -21,9 +21,9 @@ proc initEngine() : bool =
   if not assetInit():
     return false
 
-  let loadTexture : LoadFunc = texture.loadTexture
+  let loadPNG : LoadFunc = texture.loadPNG
   let unloadTexture : UnloadFunc = texture.unloadTexture
-  registerAssetLoader(loadTexture, unloadTexture, ".png")
+  registerAssetLoader(loadPNG, unloadTexture, ".png")
   
   if not graphicsInit():
     return false
@@ -48,6 +48,7 @@ proc runEngine(dEngine: DEngine) =
       if evt.kind == QuitEvent:
         runGame = false
         break
+
 
     dEngine.game.update(deltaTime)
 

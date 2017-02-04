@@ -12,6 +12,7 @@ type
     transformMatrix : Mat4x4[GLfloat]
     combinedMatrix: Mat4x4[GLfloat]
     shader: ShaderProgram
+    drawing: bool
 
 proc createDefaultShader() : ShaderProgram =
   let vertexShaderSource = """
@@ -42,8 +43,13 @@ proc createDefaultShader() : ShaderProgram =
     uniform sampler2D image;
     uniform vec3 spriteColor;
 
+    const float smoothing = 1.0/16.0;
+
     void main()
-    {    
+    {
+        //float distance = texture(image, TexCoords).a;    
+        //float alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, distance);
+        //color = vec4(Color.xyz, Color.w * alpha);
         color =  Color * texture(image, TexCoords);
     }  
   """
@@ -53,12 +59,15 @@ proc createDefaultShader() : ShaderProgram =
     logError "Error compiling shader : " & shaderProgram.log
   return shaderProgram
 
+
+proc setupMatrices(spriteBatch: var SpriteBatch) =
+  spriteBatch.combinedMatrix = spriteBatch.projectionMatrix * spriteBatch.transformMatrix
+  spriteBatch.shader.setUniformMatrix("projection", spriteBatch.combinedMatrix)
+  spriteBatch.shader.setUniformi("image", 0)
+
 proc flush(spriteBatch: SpriteBatch) =
   if spriteBatch.lastTexture.isNil:
     return
-
-  var m = mat4[GLfloat](1.0)
-  spriteBatch.shader.setUniformMatrix("model", m)
 
   spriteBatch.lastTexture.`bind`()
 
@@ -69,43 +78,100 @@ proc switchTexture(spriteBatch: SpriteBatch, texture: Texture) =
   flush(spriteBatch)
   spriteBatch.lastTexture = texture
 
-proc draw*(spriteBatch: var SpriteBatch, texture: Texture, x: float, y: float, width: float, height: float) =
+proc draw*(spriteBatch: var SpriteBatch, textureRegion: TextureRegion, x, y, width, height: float, color: Vec4f = vec4f(1.0, 1.0, 1.0, 1.0f)) =
+  if not spriteBatch.drawing:
+    logError "Spritebatch not in drawing mode. Call begin before calling draw."
+    return
+
+  let texture = textureRegion.texture
+  if texture != spriteBatch.lastTexture:
+    switchTexture(spriteBatch, texture)
+  
+  var m = mat4[GLfloat](1.0)
+  spriteBatch.shader.setUniformMatrix("model", m)
+
+  let u = textureRegion.u
+  let v = textureRegion.v2
+  let u2 = textureRegion.u2
+  let v2 = textureRegion.v
+  
+  spritebatch.vertices.add(newVertex(
+    vec3f(x, y, 0.0)
+    , vec2f(u, v)
+    , color
+  ))
+
+  spritebatch.vertices.add(newVertex(
+    vec3f(x, y + height, 0.0)
+    , vec2f(u, v2)
+    , color
+  ))
+
+  spritebatch.vertices.add(newVertex(
+    vec3f(x + width, y + height, 0.0)
+    , vec2f(u2, v2)
+    , color
+  ))
+
+  spritebatch.vertices.add(newVertex(
+    vec3f(x + width, y, 0.0)
+    , vec2f(u2, v)
+    , color
+  ))
+
+  spriteBatch.mesh.addVertices(spritebatch.vertices)
+  spriteBatch.vertices.setLen(0)
+
+  if int(spriteBatch.mesh.indexCount() / 6) >= spriteBatch.maxSprites:
+    flush(spriteBatch)
+
+proc draw*(spriteBatch: var SpriteBatch, textureRegion: TextureRegion, x, y: float) =
+  draw(spriteBatch, textureRegion, x, y, float textureRegion.regionWidth, float textureRegion.regionHeight)
+
+proc draw*(spriteBatch: var SpriteBatch, texture: Texture, x, y, width, height: float, color: Vec4f = vec4f(1.0, 1.0, 1.0, 1.0f)) =
+  if not spriteBatch.drawing:
+    logError "Spritebatch not in drawing mode. Call begin before calling draw."
+    return
+
   if texture != spriteBatch.lastTexture:
     switchTexture(spriteBatch, texture)
 
-  var vertices = spriteBatch.vertices
+  var m = mat4[GLfloat](1.0)
+  spriteBatch.shader.setUniformMatrix("model", m)
   
-  vertices.add(newVertex(
+  spritebatch.vertices.add(newVertex(
     vec3f(x, y, 0.0)
     , vec2f(0.0, 0.0)
-    , vec4f(1.0, 0.0, 0.0, 1.0)
+    , color
   ))
 
-  vertices.add(newVertex(
+  spritebatch.vertices.add(newVertex(
     vec3f(x, y + height, 0.0)
     , vec2f(0.0, 1.0)
-    , vec4f(1.0, 0.0, 0.0, 1.0)
+    , color
   ))
 
-  vertices.add(newVertex(
-    vec3f(x + width, y + width, 0.0)
+  spritebatch.vertices.add(newVertex(
+    vec3f(x + width, y + height, 0.0)
     , vec2f(1.0, 1.0)
-    , vec4f(1.0, 0.0, 0.0, 1.0)
+    , color
   ))
 
-  vertices.add(newVertex(
+  spritebatch.vertices.add(newVertex(
     vec3f(x + width, y, 0.0)
     , vec2f(1.0, 0.0)
-    , vec4f(1.0, 0.0, 0.0, 1.0)
+    , color
   ))
 
-  spriteBatch.mesh.addVertices(vertices)
+  spriteBatch.mesh.addVertices(spritebatch.vertices)
+  spriteBatch.vertices.setLen(0)
 
   if int(spriteBatch.mesh.indexCount() / 6) >= spriteBatch.maxSprites:
     flush(spriteBatch)
 
 proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatch =
   result = SpriteBatch()
+  result.drawing = false
   result.maxSprites = maxSprites
   result.vertices = @[]
   result. mesh = newMesh(true)
@@ -130,23 +196,41 @@ proc newSpriteBatch*(maxSprites: int, defaultShader: ShaderProgram) : SpriteBatc
   else:
     result.shader = defaultShader
 
-  result.shader.`begin`()
+  result.projectionMatrix = ortho[GLfloat](0, 960, 540, 0, -1.0, 1.0)
+  result.transformMatrix = mat4[GLfloat]()
+  result.transformMatrix = scale(result.transformMatrix, vec3f(0.25, 0.25, 1.0))
 
-  result.shader.setUniformi("image", 0)
-
-  var p = ortho[GLfloat](0, 960, 540, 0, -1.0, 1.0)
-
-  result.shader.setUniformMatrix("projection", p)
-
-  result.shader.`end`()
-
-proc begin*(spriteBatch: SpriteBatch) =
+proc begin*(spriteBatch: var SpriteBatch) =
+  if spriteBatch.drawing:
+    logError "Spritebatch is already in drawing mode. Call end before calling begin."
+    return
+  glDepthMask(false)
   spriteBatch.shader.begin()
 
+  spriteBatch.setupMatrices()
+
+  spriteBatch.drawing = true
+
 proc `end`*(spriteBatch: SpriteBatch) =
+  if not spriteBatch.drawing:
+    logError "Spritebatch is not currently in drawing mode. Call begin before calling end."
+    return
+  
   if spriteBatch.mesh.indexCount() > 0:
     flush(spriteBatch)
-  
+
   spriteBatch.lastTexture = nil
+  spriteBatch.drawing = false
+
+  glDepthMask(true)
 
   spriteBatch.shader.`end`()
+
+
+proc setProjectionMatrix*(spriteBatch: var SpriteBatch, projection: Mat4x4[GLfloat]) =
+  if spriteBatch.drawing:
+    flush(spriteBatch)
+  
+  spriteBatch.projectionMatrix = projection
+  if spriteBatch.drawing:
+    spriteBatch.setupMatrices()
