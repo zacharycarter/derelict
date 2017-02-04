@@ -1,6 +1,6 @@
 import sdl2
 
-import asset, framerate, game, graphics, log, shader, spritebatch, texture
+import asset, framerate, game, graphics, gui, log, shader, spritebatch, texture
 
 type
   DEngine = ref TDEngine
@@ -27,6 +27,9 @@ proc initEngine() : bool =
   
   if not graphicsInit():
     return false
+
+  if not guiInit():
+    return false
   
   logInfo("Engine initialized.")
   return true
@@ -52,7 +55,11 @@ proc runEngine(dEngine: DEngine) =
 
     dEngine.game.update(deltaTime)
 
+    guiUpdate(deltaTime)
+
     dEngine.game.render()
+
+    guiRender()
 
     graphicsSwap()
 
@@ -60,6 +67,7 @@ proc runEngine(dEngine: DEngine) =
 
 proc shutdownEngine() =
   logInfo("Shutting down engine...")
+  guiShutdown()
   graphicsShutdown()
   sdl2.quit()
   logInfo("Engine shutdown. Goodbye.")

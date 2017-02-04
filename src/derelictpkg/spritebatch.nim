@@ -3,7 +3,7 @@ import glm, opengl
 import graphics, ibo, log, mesh, shader, texture, vbo, vertex, vertexattribute
 
 type
-  SpriteBatch* = ref object of RootObj
+  SpriteBatch* = object
     mesh: Mesh
     vertices: seq[Vertex]
     maxSprites: int
@@ -65,7 +65,7 @@ proc setupMatrices(spriteBatch: var SpriteBatch) =
   spriteBatch.shader.setUniformMatrix("projection", spriteBatch.combinedMatrix)
   spriteBatch.shader.setUniformi("image", 0)
 
-proc flush(spriteBatch: SpriteBatch) =
+proc flush(spriteBatch: var SpriteBatch) =
   if spriteBatch.lastTexture.isNil:
     return
 
@@ -74,7 +74,7 @@ proc flush(spriteBatch: SpriteBatch) =
   spriteBatch.mesh.`bind`()
   spriteBatch.mesh.render()
 
-proc switchTexture(spriteBatch: SpriteBatch, texture: Texture) =
+proc switchTexture(spriteBatch: var SpriteBatch, texture: Texture) =
   flush(spriteBatch)
   spriteBatch.lastTexture = texture
 
@@ -211,7 +211,7 @@ proc begin*(spriteBatch: var SpriteBatch) =
 
   spriteBatch.drawing = true
 
-proc `end`*(spriteBatch: SpriteBatch) =
+proc `end`*(spriteBatch: var SpriteBatch) =
   if not spriteBatch.drawing:
     logError "Spritebatch is not currently in drawing mode. Call begin before calling end."
     return

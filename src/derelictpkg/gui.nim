@@ -1,42 +1,68 @@
-import glm, nvg
+import glm, nvg, os, tables
 
-import graphics, perf
-
-type
-  Widget* = object
-    position: Vec3f
-    
-
-  GUI* = object
-    debug: bool
-    fps, cpuGraph, gpuGraph: PerfGraph
+import graphics, log
 
 var vg {.global.}: ptr NVGcontext = nil
 
-proc newGUI*(debug: bool) : GUI =
-  result = GUI()
-  result.debug = debug
+var pxRatio {.global.} : float
 
-proc update*(gui: var GUI, deltaTime: float) =
-  updateGraph(gui.fps, deltaTime)
+type
+  WidgetUpdateFunc = proc(deltaTime: float)
+  WidgetRenderFunc = proc(widget: Widget, vgContext: ptr NVGContext)
+  WidgetDisposeFunc = proc()
 
-proc render*(gui: GUI) =
-  let pxRatio = getFramebufferWidth().cfloat / cfloat(getWidth())
+  Widget* = ref object of RootObj
+    updateFunc*: WidgetUpdateFunc
+    renderFunc*: WidgetRenderFunc
+    disposeFunc*: WidgetDisposeFunc
+
+var widgets {.global.} : seq[Widget]
+var fonts {.global.} : Table[string, string]
+
+proc registerWidget*(widget: Widget) =
+  add(widgets, widget)
+
+proc fontRegistered*(id: string) : bool =
+  contains(fonts, id)
+
+proc registerFont*(id: string, filename: string) : bool =
+  if not fileExists(filename):
+    logError "Unable to load font with filename : " & filename & " file does not exist."
+    return false
+
+  if nvgCreateFont(vg, id, filename) == -1:
+    logError "Unable to create nanovg font with filename : " & filename
+    return false
+
+  add(fonts, id, filename)
+
+  return true
+    
+proc guiUpdate*(deltaTime: float) =
+  for widget in widgets:
+    widget.updateFunc(deltaTime)
+
+proc guiRender*() =
   nvgBeginFrame(vg, getWidth().cint, getHeight().cint, pxRatio)
-  renderGraph(vg, 5, 5, gui.fps)
+
+  for widget in widgets:
+    widget.renderFunc(widget, vg)
+
   nvgEndFrame(vg)
 
-proc dispose*(gui: GUI) =
+proc guiShutdown*() =
+  for widget in widgets:
+    widget.disposeFunc()
   nvgDeleteGL3(vg)
 
-proc init*(gui: var GUI) =
-  if gui.debug:
-    gui.fps = newGraph(GRAPH_RENDER_FPS, "Frame Time")
-
+proc guiInit*() : bool =
   vg = nvgCreateGL3(NVG_ANTIALIAS or NVG_STENCIL_STROKES or NVG_DEBUG)
-
+  pxRatio = getFramebufferWidth().cfloat / cfloat(getWidth())
   if vg == nil: 
-    echo "Could not init nanovg."
-    quit(QUIT_FAILURE)
+    logError "Error initializing nanovg..."
+    return false
+  
+  widgets = @[]
+  fonts = initTable[string, string]()
 
-  discard nvgCreateFont(vg, "sans", "assets/fonts/orbitron/Orbitron Bold.ttf");
+  return true

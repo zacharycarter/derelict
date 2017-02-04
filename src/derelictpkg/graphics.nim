@@ -11,10 +11,12 @@ proc graphicsInit*() : bool =
     logError("Error initializing SDL : " & $getError()) 
     return false
   
-  discard glSetAttribute(SDL_GL_RED_SIZE, 1)
-  discard glSetAttribute(SDL_GL_GREEN_SIZE, 1)
-  discard glSetAttribute(SDL_GL_BLUE_SIZE, 1)
-  discard glSetAttribute(SDL_GL_ALPHA_SIZE, 1)
+  discard glSetAttribute(SDL_GL_RED_SIZE, 8)
+  discard glSetAttribute(SDL_GL_GREEN_SIZE, 8)
+  discard glSetAttribute(SDL_GL_BLUE_SIZE, 8)
+  discard glSetAttribute(SDL_GL_ALPHA_SIZE, 8)
+  discard glSetAttribute(SDL_GL_STENCIL_SIZE, 8)
+
 
   discard glSetAttribute(SDL_GL_DEPTH_SIZE, 24)
   discard glSetAttribute(SDL_GL_DOUBLEBUFFER, 1)
@@ -22,8 +24,8 @@ proc graphicsInit*() : bool =
   discard glSetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1)
   discard glSetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4)
 
-  discard glSetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4)
-  discard glSetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0)
+  discard glSetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3)
+  discard glSetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3)
   discard glSetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE)
   discard glSetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG)
   discard glSetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG)
