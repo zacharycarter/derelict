@@ -4,6 +4,7 @@ import log, window
 
 var rootWindow {.global.} : Window
 var rootContext {.global.} : GlContextPtr
+var cursor* {.global.} : CursorPtr = nil
 
 proc graphicsInit*() : bool =
   logInfo("Initializing graphics susbsystem...")

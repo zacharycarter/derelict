@@ -1,22 +1,21 @@
 import math, glm, nvg, sdl2
 
-import ../gui, ../rectangle, ../util
+import ../gui, ../rectangle, ../util, widget
 
 type
-  ResizeMode = enum
-    T, L, R, B, TL, TR, BL, BR
-
-  Panel* = ref object of Widget
+  Panel* = ref object of ResizableWidget
     title: string
-    position, size: Vec2f
     headerBounds: Rectangle[float]
-    beingResized: bool
-    minWidth, minHeight: float
+  
 
-var currentResizeMode {.global.} : ResizeMode
+proc movePanel*(widget: var MovableWidget, x, y: float) =
+  var panel = Panel(widget)
+  panel.bounds = panel.bounds.Translate(x, y)
+  panel.headerBounds = panel.headerBounds.Translate(x, y)
 
-proc scaleBounds(panel: Panel, x,y: float) =
-  case currentResizeMode
+proc resizePanel*(widget: var ResizableWidget, x, y: float) =
+  let panel = Panel widget
+  case panel.resizeMode
   of L:
     panel.bounds.left += x
     panel.headerBounds.left += x
@@ -32,82 +31,7 @@ proc scaleBounds(panel: Panel, x,y: float) =
   else:
     discard
 
-proc translateBounds(panel: Panel, x,y: float) =
-  panel.bounds = panel.bounds.Translate(x, y)
-  panel.headerBounds = panel.headerBounds.Translate(x, y)
-
-proc update(widget: Widget, deltaTime: float) {.procvar.} =
-  var mouseX, mouseY : cint
-  getMouseState(mouseX, mouseY)
-  if widget.bounds.Contains(float mouseX, float mouseY):
-    widget.hovered = true
-  else:
-    widget.hovered = false
-
-  let panel = Panel widget
-  
-  if widget.hovered:
-    var iSide = 0
-    var iTopBot = 0
-
-    if float(mouseX) <= panel.position.x + 5:
-      iSide = 1
-    if float(mouseX) >= (panel.position.x + panel.bounds.Width()) - 5:
-      iSide = 2
-    if float(mouseY) < panel.position.y + 5:
-      iTopBot = 3
-    if float(mouseY) > (panel.position.y + panel.bounds.Height()) - 5:
-      iTopBot = 6
-    
-    let border = iSide + iTopBot
-
-    case border:
-    of 0:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL)
-      setCursor(cursor)
-      panel.beingResized = false
-    of 1, 2:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE)
-      setCursor(cursor)
-      panel.beingResized = true
-      if border == 1:
-        currentResizeMode = L
-      else:
-        currentResizeMode = R
-    of 3, 6:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZENS)
-      setCursor(cursor)
-      panel.beingResized = true
-      if border == 3:
-        currentResizeMode = T
-      else:
-        currentResizeMode = B
-    of 5, 7:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW)
-      setCursor(cursor)
-      panel.beingResized = true
-      if border == 5:
-        currentResizeMode = TR
-      else:
-        currentResizeMode = BL
-    of 4, 8:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE)
-      setCursor(cursor)
-      panel.beingResized = true
-      if border == 4:
-        currentResizeMode = TL
-      else:
-        currentResizeMode = BR
-    else:
-      cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL)
-      setCursor(cursor)
-      panel.beingResized = false
-  
-  else:
-    cursor = createSystemCursor(SDL_SYSTEM_CURSOR_ARROW)
-    setCursor(cursor)
-    panel.beingResized = false
-
+#[
 proc dragEvent*(widget: var Widget, event: Event) =
   let panel = Panel widget
 
@@ -123,7 +47,7 @@ proc dragEvent*(widget: var Widget, event: Event) =
       panel.translateBounds(relx, rely)
     
     else:
-      case currentResizeMode
+      case panel.resizeMode
       of R:
         if mouseX >= panel.bounds.left + panel.minWidth + 5:
           panel.scaleBounds(relx, rely)
@@ -144,6 +68,7 @@ proc dragEvent*(widget: var Widget, event: Event) =
           panel.scaleBounds(relx, rely)
       else:
         discard
+]#
 
 proc render(widget: Widget, nvgContext: ptr NVGContext) {.procvar.} =
   let panel = Panel(widget)
@@ -260,6 +185,10 @@ proc render(widget: Widget, nvgContext: ptr NVGContext) {.procvar.} =
 proc destroy() {.procvar.} =
   discard
 
+let
+  movable : IMovable = IMovable(move: movePanel)
+  resizable: IResizable = IResizable(resize: resizePanel)
+
 proc newPanel*(title: string, position, size: Vec2f, minWidth, minHeight: float = 100) : Panel =
   result = Panel()
   result.title = title
@@ -271,6 +200,8 @@ proc newPanel*(title: string, position, size: Vec2f, minWidth, minHeight: float 
   result.renderFunc = render
   result.dragEventFunc = dragEvent
   result.disposeFunc = destroy
+  result.movable = movable
+  result.resizable = resizable
   result.bounds = newRectangle[float](result.position.x, result.position.y, result.position.x + result.size.x, result.position.y + result.size.y)
   result.headerBounds = newRectangle[float](result.position.x, result.position.y, result.position.x + result.size.x, result.position.y + 32)
   registerWidget(result)

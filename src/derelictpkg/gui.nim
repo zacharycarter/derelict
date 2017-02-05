@@ -1,6 +1,6 @@
 import glm, nvg, os, sdl2, tables
 
-import event, graphics, rectangle, log
+import event, graphics, rectangle, log, gui/widget
 
 var vg {.global.}: ptr NVGcontext = nil
 
@@ -8,25 +8,10 @@ var pxRatio {.global.} : float
 
 var dragActive* {.global.} : bool = false
 
-type
-  WidgetUpdateFunc = proc(widget: Widget, deltaTime: float)
-  WidgetRenderFunc = proc(widget: Widget, vgContext: ptr NVGContext)
-  WidgetDragEventFunc = proc(widget: var Widget, event: Event)
-  WidgetDisposeFunc = proc()
-
-  Widget* = ref object of RootObj
-    updateFunc*: WidgetUpdateFunc
-    renderFunc*: WidgetRenderFunc
-    dragEventFunc*: WidgetDragEventFunc
-    disposeFunc*: WidgetDisposeFunc
-    bounds*: Rectangle[float]
-    hovered*: bool
-
 var widgetBeingDragged* {.global.} : Widget = nil
 var widgetInFocus* {.global.} : Widget = nil
 var widgets {.global.} : seq[Widget]
 var fonts {.global.} : Table[string, string]
-var cursor* {.global.} : CursorPtr = nil
 
 proc registerWidget*(widget: Widget) =
   add(widgets, widget)
@@ -50,10 +35,23 @@ proc registerFont*(id: string, filename: string) : bool =
   add(fonts, id, filename)
 
   return true
+
+proc findWidget(x, y: float) : Widget = 
+  for widget in widgets:
+    if widget.contains(x,y):
+      return widget
     
 proc guiUpdate*(deltaTime: float) =
+  var x, y : cint
+  getMouseState(x, y)
+  let hoveredWidget = findWidget(float x, float y)
+  
   for widget in widgets:
-    widget.updateFunc(widget, deltaTime)
+    widget.updateFunc(widget, deltaTime, hoveredWidget == widget)
+  
+  if hoveredWidget.isNil:
+    cursor = createSystemCursor(SDL_SYSTEM_CURSOR_ARROW)
+    setCursor(cursor)
 
 proc guiRender*() =
   nvgBeginFrame(vg, getWidth().cint, getHeight().cint, pxRatio)
@@ -67,11 +65,6 @@ proc guiShutdown*() =
   for widget in widgets:
     widget.disposeFunc()
   nvgDeleteGL3(vg)
-
-proc findWidget(x, y: float) : Widget = 
-  for widget in widgets:
-    if widget.contains(x,y):
-      return widget
 
 proc listenForGUIEvent(event: Event) : bool =
   var eventHandled = false
@@ -121,3 +114,6 @@ proc guiInit*() : bool =
   
 proc setDragActive*(active: bool) =
   dragActive = active
+
+proc getContext*() : NVGContextPtr =
+  vg
