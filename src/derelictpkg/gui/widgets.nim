@@ -1,3 +1,3 @@
-import label
+import label, panel
 
-export label
+export label, panel

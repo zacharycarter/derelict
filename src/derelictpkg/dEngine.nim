@@ -1,6 +1,6 @@
 import sdl2
 
-import asset, framerate, game, graphics, gui, log, shader, spritebatch, texture
+import asset, event, framerate, game, graphics, gui, log, shader, spritebatch, texture
 
 type
   DEngine = ref TDEngine
@@ -28,6 +28,9 @@ proc initEngine() : bool =
   if not graphicsInit():
     return false
 
+  if not eventInit():
+    return false
+
   if not guiInit():
     return false
   
@@ -51,6 +54,8 @@ proc runEngine(dEngine: DEngine) =
       if evt.kind == QuitEvent:
         runGame = false
         break
+      else:
+        handleEvent(evt)
 
 
     dEngine.game.update(deltaTime)

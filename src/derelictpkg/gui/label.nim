@@ -8,15 +8,14 @@ type
     textColor: NVGColor
     fontId: string
     fontSize: float
-    backgroundColor: Vec4f
     position: Vec2f
-    width, height: int
 
-proc update(deltaTime: float) {.procvar.} =
+proc update(widget: Widget, deltaTime: float) {.procvar.} =
   discard
 
 proc render(widget: Widget, nvgContext: ptr NVGContext) {.procvar.} =
   let label = Label(widget)
+
   nvgFontFace(nvgContext, label.fontId)
   nvgFontSize(nvgContext, label.fontSize)
   nvgFillColor(nvgContext, label.textColor)
@@ -44,6 +43,7 @@ proc newLabel*(
   result.updateFunc = update
   result.renderFunc = render
   result.disposeFunc = destroy
+
   if not fontRegistered(fontId):
     if fontFilename.isNil:
       logError("Font with id " & fontId & " not yet loaded. Must provide filename.")

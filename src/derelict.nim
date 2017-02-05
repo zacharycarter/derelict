@@ -22,7 +22,7 @@ proc init*(derelict: Derelict) =
   load("assets/textures/megaman.png")
   
   let label = newLabel(
-    "test"
+    "example label"
     , "orbitron"
     , nvgRGBA(255, 0, 0, 255)
     , vec2f(20, 20)
@@ -30,13 +30,7 @@ proc init*(derelict: Derelict) =
     , "assets/fonts/orbitron/Orbitron Bold.ttf"
   )
 
-  let label2 = newLabel(
-    "test2"
-    , "orbitron"
-    , nvgRGBA(0, 255, 0, 255)
-    , vec2f(200, 120)
-    , 14.0
-  )
+  let panel = newPanel("example panel", vec2f(450 ,100), vec2f(250, 250))
   
 proc update(derelict: Derelict, deltaTime: float) =
   discard
