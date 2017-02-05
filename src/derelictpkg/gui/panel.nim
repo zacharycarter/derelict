@@ -1,6 +1,6 @@
 import math, glm, nvg, sdl2
 
-import ../gui, ../rectangle, ../util, widget
+import ../gui, ../rectangle, ../util, layout, widget
 
 type
   Panel* = ref object of ResizableWidget
@@ -189,7 +189,13 @@ let
   movable : IMovable = IMovable(move: movePanel)
   resizable: IResizable = IResizable(resize: resizePanel)
 
-proc newPanel*(title: string, position, size: Vec2f, minWidth, minHeight: float = 100) : Panel =
+proc newPanel*(
+  title: string
+  , position
+  , size: Vec2f
+  , layout: Layout = nil
+  , minWidth, minHeight: float = 100
+) : Panel =
   result = Panel()
   result.title = title
   result. position = position
@@ -200,6 +206,7 @@ proc newPanel*(title: string, position, size: Vec2f, minWidth, minHeight: float 
   result.renderFunc = render
   result.dragEventFunc = dragEvent
   result.disposeFunc = destroy
+  result.layout = layout
   result.movable = movable
   result.resizable = resizable
   result.bounds = newRectangle[float](result.position.x, result.position.y, result.position.x + result.size.x, result.position.y + result.size.y)

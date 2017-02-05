@@ -1,6 +1,6 @@
 import glm, nvg, sdl2
 
-import ../graphics, ../rectangle
+import ../graphics, ../rectangle, layout
 
 type  
   WidgetUpdateFunc = proc(widget: Widget, deltaTime: float, hovered: bool)
@@ -15,6 +15,7 @@ type
     disposeFunc*: WidgetDisposeFunc
     bounds*: Rectangle[float]
     position*, size*: Vec2f
+    layout*: Layout
 
   ResizeMode* = enum
     T, L, R, B, TL, TR, BL, BR
@@ -92,6 +93,7 @@ proc resize*(resizableWidget: ResizableWidget) =
   discard
 
 proc update*(widget: Widget, deltaTime: float, hovered: bool) {.procvar.} =
+  # TODO: Handle corner resizing
   var mouseX, mouseY : cint
   getMouseState(mouseX, mouseY)
   
@@ -158,3 +160,6 @@ proc update*(widget: Widget, deltaTime: float, hovered: bool) {.procvar.} =
     else:
       cursor = createSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL)
       setCursor(cursor)
+
+proc performLayout*(widget: var Widget) {.procvar.} =
+  echo "Performing layout!"

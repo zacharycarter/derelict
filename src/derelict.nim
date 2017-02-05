@@ -6,6 +6,7 @@ import
   , derelictpkg/graphics
   , derelictpkg/game
   , derelictpkg/gui/widgets
+  , derelictpkg/gui
   , derelictpkg/log
   , derelictpkg/spritebatch
   , derelictpkg/texture
@@ -30,7 +31,9 @@ proc init*(derelict: Derelict) =
     , "assets/fonts/orbitron/Orbitron Bold.ttf"
   )
 
-  let panel = newPanel("example panel", vec2f(450 ,100), vec2f(250, 250))
+  let panel = newPanel("example panel", vec2f(450 ,100), vec2f(250, 250), newBoxLayout())
+
+  layoutGUI()
   
 proc update(derelict: Derelict, deltaTime: float) =
   discard

@@ -117,3 +117,9 @@ proc setDragActive*(active: bool) =
 
 proc getContext*() : NVGContextPtr =
   vg
+
+proc layoutGUI*() =
+  for widget in widgets:
+    var w = widget
+    if not w.layout.isNil:
+      w.layout.impl.execute()
